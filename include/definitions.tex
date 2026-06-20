@@ -1,10 +1,8 @@
 %% variables
-\newcommand\cardwidth{\linewidth}
-\newcommand\cardheight{\pageheight}
-\def\scrollOneThresh{8}
 \def\backgroundOpacity{1}
 
-% card evironment
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% card evironment
 
 %   #1 - deck type
 %%%% Combat
@@ -28,535 +26,401 @@
 %   #3 - image name
 
 
-\newenvironment{card}[3]
-    {
-        \csname setCard#2\endcsname{#3}{#1}
-        \gdef\name{#3}
-        \gdef\class{#2}
-    }
-    {
-        \newpage
-    }
-
-%% place a text box
-\newcommand{\placetextbox}[4]{
-  \setbox0=\hbox{#3}
-  \AddToShipoutPictureFG*{
-    \put(\LenToUnit{#1\cardwidth},\LenToUnit{#2\cardheight}){\vtop{{\null}\parbox{#4\cardwidth}{#3}}}
-  }
+\newenvironment{card}[3] {%
+	\begin{tikzpicture}[overlay, remember picture, shift={(current page.north west)}]% coordinates are relative to the paper's top left corner
+		\begin{scope}[shift={(\cardmargin,-\cardmargin)}]% coordinates are relative to the card's top left corner
+			\csname setCard#2\endcsname{#3}{#1}
+			% \draw[red] (0mm,0mm) rectangle (\cardwidth,-\cardheight); % card border
+			\draw (-\cardmargin,0) -- (0,0) -- (0,\cardmargin);
+			\draw (\cardwidth,\cardmargin) -- (\cardwidth,0) -- (\cardwidth+\cardmargin,0);
+			\draw (\cardwidth+\cardmargin,-\cardheight) -- (\cardwidth,-\cardheight) -- (\cardwidth,-\cardheight-\cardmargin);
+			\draw (-\cardmargin,-\cardheight) -- (0,-\cardheight) -- (0,-\cardheight-\cardmargin);
+			\gdef\name{#3}
+			\gdef\class{#2}
+} {%
+		\end{scope}%
+	\end{tikzpicture}%
+	\newpage%
 }
 
-% equipment -- shield
-
-\newcommand{\placeEquipmentScroll}[1]{
-    \StrLen{#1}[\raceLen]
-
-    \ifthenelse{\raceLen > 17}{
-      \placeScroll{0.115}{0.6}{3}
-    } {
-      \ifthenelse{\raceLen < 12}{
-        \placeScroll{0.115}{0.6}{1}
-      } {
-        \placeScroll{0.115}{0.6}{2}
-      }
-    }
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% "public" macros to be used within the card environment
+%%
+\newcommand{\cardName}[1]{%
+	\placeScroll{\topscrollX}{\topscrollY}{{#1}}{right}
+}
+\newcommand{\cardRace}[1]{%
+	\placeScroll{\midscrollX}{\midscrollY}{{#1}}{left}
+	% \placeScroll{\midscrollX}{\midscrollY}{{\fontsize{8}{8.3}\selectfont #1}}{left} % TODO
+}
+\newcommand{\cardHP}[1]{%
+	\node[opacity=1] at (\hpX,\hpY) {#1};
+}
+\newcommand{\cardText}[1]{%
+	\cardAnyText{%
+		% \centering % TODO
+		\fontsize{7}{8}\selectfont #1%
+	}%
+}
+\newcommand{\cardDoubleText}[2]{%
+	\cardText{%
+		\fontsize{7}{7.3}\selectfont #1%
+		\linebreak\includegraphics[width=\textBoxSize]{include/misc/simple-divider.png}\linebreak
+		#2%
+	}
 }
 
-\newcommand{\placeCursedRaceScroll}[1]{
-    \StrLen{#1}[\raceLen]
-
-    \ifthenelse{\raceLen < 20}{
-      \placeScroll{0.17}{0.6}{3}
-    }{
-    % placeCursedScroll
-      \placeScroll{0.17}{0.6}{6}
-    }
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+\newcommand{\cardAnyText}[1]{%
+	% \draw [yellow] (\textBoxX,\textBoxY) rectangle (\textBoxX+\textBoxSize,\textBoxY-1cm);
+	\node[opacity=1,inner sep=0pt, anchor=north west] at (\textBoxX,\textBoxY)
+		{\parbox{\textBoxSize}{%
+			\shapepar[1mm]{\textShape}%
+			#1%
+			\par%
+		}};
 }
 
-\newcommand{\placeScroll}[3]{
-  \node[opacity=1,inner sep=0pt] at (#1\cardwidth,-#2\cardheight)
-    {\includegraphics[height=0.08\cardheight]{include/misc/scroll_#3.png}};
+\newlength{\currentScrollWidth}
+% adds "scroll" at coordinates (#1, #2) with text #3 and alignment #4
+\newcommand{\placeScroll}[4]{%
+	\edef\scrollheight{7mm}
+	\node[#4,opacity=1,inner sep=-4mm] at (#1,#2) {%
+		\settowidth{\currentScrollWidth}{\widthof{#3}}%
+		\ifthenelse{\lengthtest{\currentScrollWidth < 20mm}}{%
+			\includegraphics[height=\scrollheight]{include/misc/scroll_1.png}%
+		}{\ifthenelse{\lengthtest{\currentScrollWidth < 30mm}}{%
+			\includegraphics[height=\scrollheight]{include/misc/scroll_2.png}%
+		}{%
+			\includegraphics[height=\scrollheight]{include/misc/scroll_3.png}%
+		}}%
+	};
+	\node[#4,opacity=1,inner sep=0pt] at (#1,#2) {#3};
 }
 
-\newcommand{\placeCursedScroll}[3]{
-  \node[opacity=0.7,inner sep=0pt] at (#1\cardwidth,-#2\cardheight)
-    {\includegraphics[height=0.09\cardheight]{include/misc/scroll_#3_cursed.png}};
+% adds card illustration at coordinates (#1, #2) with height #3 from file name #4
+\newcommand{\placeIllustration}[4]{%
+	\node[opacity=1,inner sep=0pt] at (#1,#2)
+		{\includegraphics[height=#3]{#4}};
 }
 
-\newcommand{\placeTitleScroll}{
-  \node[opacity=1,inner sep=0pt] at (0.38\cardwidth,-0.027\cardheight)
-    % scroll_4_light?
-    % {\includegraphics[height=0.097\cardheight]{include/misc/scroll_4_cursed.png}};
-    {\includegraphics[height=0.097\cardheight]{include/misc/scroll_4.png}};
+\newcommand{\placeLayout}[1]{%
+	\node[opacity=\backgroundOpacity,inner sep=0pt] at (current page.center)
+		{\includegraphics[width=\cardpaperwidth,height=\cardpaperheight]{#1}};
 }
 
-\newcommand{\placeCurse}[2]{
-  \node[opacity=1,inner sep=0pt] at (#1\cardwidth,-#2\cardheight)
-    {\includegraphics[height=0.13\cardheight]{include/misc/loc_curse2.png}}; %
-  % \node[opacity=1,inner sep=0pt] at (#1\cardwidth,-#2\cardheight)
-  %   {\includegraphics[height=0.15\cardheight]{include/misc/curse.png}};
-}
-
-\newcommand{\placeBaseLayer}[1]{
+\newcommand{\placeBaseLayer}[1]{ % TODO: remove
   \node[opacity=1,inner sep=0pt] at (current page.center)
     {\includegraphics[width=\cardwidth,height=\cardheight]{include/background/#1.jpg}};
 }
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
 
- % adds Noemi's illustrations, coordinates (1,2), relative size (3) and file name (4) are specified within classes
-\newcommand{\placeIllustration}[4]{
-  \node[opacity=1,inner sep=0pt] at (#1\cardwidth,-#2\cardheight)
-    {\includegraphics[height=#3\cardheight]{#4}};
-}
+% \newcommand{\placeCursedScroll}[3]{
+%   \node[opacity=0.7,inner sep=0pt] at (#1\cardwidth,-#2\cardheight)
+%     {\includegraphics[height=0.09\cardheight]{include/misc/scroll_#3_cursed.png}};
+% }
 
-\newcommand{\placeLayout}[1]{
-  \node[opacity=\backgroundOpacity,inner sep=0pt] at (current page.center)
-    {\includegraphics[width=\cardwidth,height=\cardheight]{#1}};
-}
+% \newcommand{\placeTitleScroll}{
+%   \node[opacity=1,inner sep=0pt] at (0.38\cardwidth,-0.027\cardheight)
+%     % scroll_4_light?
+%     % {\includegraphics[height=0.097\cardheight]{include/misc/scroll_4_cursed.png}};
+%     {\includegraphics[height=0.097\cardheight]{include/misc/scroll_4.png}};
+% }
 
-\newcommand{\cardName}[1]{\placetextbox{\nameX}{\nameY}{\centerline{#1}}{\nameBoxsize}}
-\newcommand{\cardRace}[1]{
-  % this gets triggered only for equipment (and places the Equipment scroll)
-  \ifthenelse{\equal{\class}{Equipment}}{
-    \begin{tikzpicture}[overlay, remember picture]
-      \placeEquipmentScroll{#1} % to be less cluky I removed the decisionmaking of the scroll size in a separated function
-    \end{tikzpicture}
-  }{  }
-  % this gets triggered only for cursed equipment (and places the Cursed scroll)
-  \ifthenelse{\equal{\class}{EquipmentCursed}}{
-    \begin{tikzpicture}[overlay, remember picture]
-      \placeCursedRaceScroll{#1} % to be less cluky I removed the decisionmaking of the scroll size in a separated function
-    \end{tikzpicture}
-  }{  }
+% \newcommand{\placeCurse}[2]{
+%   \node[opacity=1,inner sep=0pt] at (#1\cardwidth,-#2\cardheight)
+%     {\includegraphics[height=0.13\cardheight]{include/misc/loc_curse2.png}}; %
+%   % \node[opacity=1,inner sep=0pt] at (#1\cardwidth,-#2\cardheight)
+%   %   {\includegraphics[height=0.15\cardheight]{include/misc/curse.png}};
+% }
 
-  \placetextbox{\raceX}{\raceY}{ \fontsize{8}{8.3}\selectfont\centerline{#1}}{\raceBoxsize}
-}
 
-\newcommand{\cardHP}[1]{\placetextbox{\hpX}{\hpY}{#1}{\hpBoxsize}}
 
-\newcommand{\cardText}[1]{
-  \placetextbox{\textX}{\textY}{ \fontsize{7}{8}\selectfont \centering #1 }{\textBoxsize}
-}
-
-\newcommand{\cardDoubleText}[2]{ \placetextbox{\textX}{\textY}{\fontsize{7}{7.3}\selectfont \centering #1 \linebreak \includegraphics[width=\cardwidth]{include/misc/simple-divider.png}\linebreak #2 }{\textBoxsize} }
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ORCS
 
 \newcommand{\setCardOrc}[2]{
-    \gdef\nameX{0.08}
-    \gdef\nameY{0.948}
-    \gdef\nameBoxsize{0.4}
-
-    \gdef\raceX{0.52}
-    \gdef\raceY{0.37}
-    \gdef\raceBoxsize{0.3}
-
-    \gdef\hpX{0.83}
-    \gdef\hpY{0.953}
-    \gdef\hpBoxsize{0.1}
-
-    \gdef\textX{0.25}
-    \gdef\textY{0.24}
-    \gdef\textBoxsize{0.65}
-
-    \setOrcBackground{#1}
+	\def\hpX{55.4mm}
+	\def\hpY{-7mm}
+	\def\textBoxX{12mm}
+	\def\textBoxY{-60mm}
+	\def\textBoxSize{46.5mm}
+	\def\textShape{ {23.25}
+		{0} b{0} \\
+		{0} t{1.5}{45} \\
+		{6} t{1.5}{45} \\
+		{6.5} t{0}{46.5} \\
+		{21}  t{0}{46.5} \\
+		{21} t{13.5}{32} \\
+		{22} t{17.5}{29} \\
+		{26} t{17.5}{29} \\
+		{26} e{46.5}
+	}
+	\def\topscrollX{11mm}
+	\def\topscrollY{-6.5mm}
+	\def\midscrollX{55mm}
+	\def\midscrollY{-56mm}
+	\setOrcBackground{#1}
+}
+\newcommand{\setOrcBackground}[1]{%
+	% \placeBaseLayer{characters}
+	\placeIllustration{35.4mm}{-34mm}{50mm}{include/pics/orc/#1}
+	\placeLayout{include/background/orc}
 }
 
-\newcommand{\setOrcBackground}[1]{
-  \begin{tikzpicture}[overlay, remember picture]
-
-    \placeBaseLayer{characters} % adds neutral canvas, probably could be skipped
-    \placeIllustration{0.457}{0.36}{0.54}{include/pics/characters/#1} % adds Noemi's illustrations
-    \placeLayout{include/background/orc}
-
-    \StrLen{#1}[\picNameLen]
-    \ifthenelse{\picNameLen > \scrollOneThresh}{
-      \placeScroll{0.17}{0.05}{2}
-    }{
-      \placeScroll{0.17}{0.05}{1}
-    }
-
-    \placeScroll{0.55}{0.63}{1}
-
-  \end{tikzpicture}
-}
-
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% DWARFS
 
 \newcommand{\setCardDwarf}[2]{
-    \gdef\nameX{0.08}
-    \gdef\nameY{0.948}
-    \gdef\nameBoxsize{0.4}
-
-    \gdef\raceX{0.55}
-    \gdef\raceY{0.35}
-    \gdef\raceBoxsize{0.3}
-
-    \gdef\hpX{0.8}
-    \gdef\hpY{0.93}
-    \gdef\hpBoxsize{0.1}
-
-    \gdef\textX{0.26}
-    \gdef\textY{0.22}
-    \gdef\textBoxsize{0.6}
-
-    \setDwarfBackground{#1}
+	\def\hpX{55.4mm}
+	\def\hpY{-7mm}
+	\def\textBoxX{12mm}
+	\def\textBoxY{-60mm}
+	\def\textBoxSize{46.5mm}
+	\def\textShape{ {23.25}
+		{0} b{0} \\
+		{0} t{1.5}{45} \\
+		{6} t{1.5}{45} \\
+		{6.5} t{0}{46.5} \\
+		{21}  t{0}{46.5} \\
+		{21} t{13.5}{32} \\
+		{22} t{17.5}{29} \\
+		{26} t{17.5}{29} \\
+		{26} e{46.5}
+	}
+	\def\topscrollX{11mm}
+	\def\topscrollY{-6.5mm}
+	\def\midscrollX{55mm}
+	\def\midscrollY{-56mm}
+	\setDwarfBackground{#1}
 }
 
 \newcommand{\setDwarfBackground}[1]{
-  \begin{tikzpicture}[overlay, remember picture]
-
-    \placeBaseLayer{characters}
-    \placeIllustration{0.457}{0.38}{0.54}{include/pics/characters/#1}
-    \placeLayout{include/background/dwarf}
-
-    \placeScroll{0.58}{0.65}{1}
-    \StrLen{#1}[\picNameLen]
-    \ifthenelse{\picNameLen > \scrollOneThresh}{
-        \placeScroll{0.17}{0.05}{2}
-    }{
-        \placeScroll{0.17}{0.05}{1}
-    }
-
-  \end{tikzpicture}
+	% \placeBaseLayer{characters}
+	\placeIllustration{35.4mm}{-34mm}{50mm}{include/pics/dwarf/#1}
+	\placeLayout{include/background/dwarf}
 }
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ELVES
 
 \newcommand{\setCardElf}[2]{
-    \gdef\nameX{0.08}
-    \gdef\nameY{0.948}
-    \gdef\nameBoxsize{0.4}
-
-    \gdef\raceX{0.52}
-    \gdef\raceY{0.35}
-    \gdef\raceBoxsize{0.3}
-
-    \gdef\hpX{0.823}
-    \gdef\hpY{0.945}
-    \gdef\hpBoxsize{0.1}
-
-    \gdef\textX{0.29}
-    \gdef\textY{0.245}
-    \gdef\textBoxsize{0.58}
-
-    \setElfBackground{#1}
+	\def\hpX{54.2mm}
+	\def\hpY{-9mm}
+	\def\textBoxX{11mm}
+	\def\textBoxY{-60mm}
+	\def\textBoxSize{46.5mm}
+	\def\textShape{ {23.25}
+		{0} b{0} \\
+		{0} t{1.5}{45} \\
+		{6} t{1.5}{45} \\
+		{6.5} t{0}{46.5} \\
+		{21}  t{0}{46.5} \\
+		{21} t{13.5}{32} \\
+		{22} t{17.5}{29} \\
+		{26} t{17.5}{29} \\
+		{26} e{46.5}
+	}
+	\def\topscrollX{11mm}
+	\def\topscrollY{-6.5mm}
+	\def\midscrollX{55mm}
+	\def\midscrollY{-56mm}
+	\setElfBackground{#1}
 }
 
 \newcommand{\setElfBackground}[1]{
-  \begin{tikzpicture}[overlay, remember picture]
-
-    \placeBaseLayer{characters}
-    \placeIllustration{0.457}{0.36}{0.54}{include/pics/characters/#1}
-    \placeLayout{include/background/elf}
-
-    \StrLen{#1}[\picNameLen]
-    \ifthenelse{\picNameLen > \scrollOneThresh}{
-      \placeScroll{0.17}{0.05}{2}
-    }{
-      \placeScroll{0.17}{0.05}{1}
-    }
-
-    \placeScroll{0.57}{0.65}{1}
-
-  \end{tikzpicture}
+	% \placeBaseLayer{characters}
+	\placeIllustration{35.4mm}{-34mm}{50mm}{include/pics/elf/#1}
+	\placeLayout{include/background/elf}
 }
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% NEUTRALS
 %% LONG
 
 \newcommand{\setCardLongNeutral}[2]{
-    \gdef\nameX{0.08}
-    \gdef\nameY{0.948}
-    \gdef\nameBoxsize{0.4}
-
-    \gdef\raceX{0.53}
-    \gdef\raceY{0.35}
-    \gdef\raceBoxsize{0.3}
-
-    \gdef\hpX{0.80}
-    \gdef\hpY{0.94}
-    \gdef\hpBoxsize{0.1}
-
-    \gdef\textX{0.24}
-    \gdef\textY{0.23}
-    \gdef\textBoxsize{0.65}
-
-    \setNeutralLongBackground{#1}
+	\def\hpX{55.4mm}
+	\def\hpY{-7mm}
+	\def\textBoxX{12mm}
+	\def\textBoxY{-60mm}
+	\def\textBoxSize{46.5mm}
+	\def\textShape{ {23.25}
+		{0} b{0} \\
+		{0} t{1.5}{45} \\
+		{6} t{1.5}{45} \\
+		{6.5} t{0}{46.5} \\
+		{21}  t{0}{46.5} \\
+		{21} t{13.5}{32} \\
+		{22} t{17.5}{29} \\
+		{26} t{17.5}{29} \\
+		{26} e{46.5}
+	}
+	\def\topscrollX{11mm}
+	\def\topscrollY{-6.5mm}
+	\def\midscrollX{55mm}
+	\def\midscrollY{-56mm}
+	\setNeutralLongBackground{#1}
 }
 
 \newcommand{\setNeutralLongBackground}[1]{
-  \begin{tikzpicture}[overlay, remember picture]
-
-    \placeBaseLayer{characters}
-    \placeIllustration{0.457}{0.36}{0.57}{include/pics/characters/#1}
-    \placeLayout{include/background/neutral_tall}
-
-    \StrLen{#1}[\picNameLen]
-    \ifthenelse{\picNameLen > \scrollOneThresh}{
-      \placeScroll{0.17}{0.05}{2}
-    }{
-      \placeScroll{0.17}{0.05}{1}
-    }
-
-    \placeScroll{0.57}{0.65}{1}
-
-  \end{tikzpicture}
+	% \placeBaseLayer{characters}
+	\placeIllustration{35.4mm}{-34mm}{50mm}{include/pics/neutral/#1}
+	\placeLayout{include/background/neutral_tall}
 }
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% NEUTRALS
 %% SHORT
 
 \newcommand{\setCardShortNeutral}[2]{
-    \gdef\nameX{0.08}
-    \gdef\nameY{0.948}
-    \gdef\nameBoxsize{0.4}
-
-    \gdef\raceX{0.53}
-    \gdef\raceY{0.42}
-    \gdef\raceBoxsize{0.3}
-
-    \gdef\hpX{0.80}
-    \gdef\hpY{0.94}
-    \gdef\hpBoxsize{0.1}
-
-    \gdef\textX{0.191}
-    \gdef\textY{0.305}
-
-    \gdef\textBoxsize{0.7}
-
-    \setNeutralShortBackground{#1}
+	\def\hpX{55.4mm}
+	\def\hpY{-7mm}
+	\def\textBoxX{12mm}
+	\def\textBoxY{-60mm}
+	\def\textBoxSize{46.5mm}
+	\def\textShape{ {23.25}
+		{0} b{0} \\
+		{0} t{1.5}{45} \\
+		{6} t{1.5}{45} \\
+		{6.5} t{0}{46.5} \\
+		{21}  t{0}{46.5} \\
+		{21} t{13.5}{32} \\
+		{22} t{17.5}{29} \\
+		{26} t{17.5}{29} \\
+		{26} e{46.5}
+	}
+	\def\topscrollX{11mm}
+	\def\topscrollY{-6.5mm}
+	\def\midscrollX{55mm}
+	\def\midscrollY{-56mm}
+	\setNeutralShortBackground{#1}
 }
 
 \newcommand{\setNeutralShortBackground}[1]{
-  \begin{tikzpicture}[overlay, remember picture]
-
-    \placeBaseLayer{characters}
-    \placeIllustration{0.457}{0.36}{0.54}{include/pics/characters/#1}
-    \placeLayout{include/background/neutral_short}
-
-    \StrLen{#1}[\picNameLen]
-    \ifthenelse{\picNameLen > \scrollOneThresh}{
-      \placeScroll{0.08}{0.05}{2}
-    }{
-      \placeScroll{0.17}{0.05}{1}
-    }
-
-    \placeScroll{0.57}{0.58}{1}
-
-  \end{tikzpicture}
+	% \placeBaseLayer{characters}
+	\placeIllustration{35.4mm}{-34mm}{50mm}{include/pics/neutral/#1}
+	\placeLayout{include/background/neutral_short}
 }
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Undead
 
 \newcommand{\setCardUndead}[2]{
-    \gdef\nameX{0.08}
-    \gdef\nameY{0.948}
-    \gdef\nameBoxsize{0.4}
-
-    \gdef\raceX{0.53}
-    \gdef\raceY{0.42}
-    \gdef\raceBoxsize{0.3}
-
-    \gdef\hpX{0.865}
-    \gdef\hpY{0.94}
-    % \gdef\hpX{0.875}
-    % \gdef\hpY{0.94}
-    \gdef\hpBoxsize{0.1}
-
-    \gdef\textX{0.23}
-    \gdef\textY{0.270}
-    \gdef\textBoxsize{0.6}
-
-    \setUndeadBackground{#1}
+	\def\hpX{55.4mm}
+	\def\hpY{-7mm}
+	\def\textBoxX{12mm}
+	\def\textBoxY{-60mm}
+	\def\textBoxSize{46.5mm}
+	\def\textShape{ {23.25}
+		{0} b{0} \\
+		{0} t{1.5}{45} \\
+		{6} t{1.5}{45} \\
+		{6.5} t{0}{46.5} \\
+		{21}  t{0}{46.5} \\
+		{21} t{13.5}{32} \\
+		{22} t{17.5}{29} \\
+		{26} t{17.5}{29} \\
+		{26} e{46.5}
+	}
+	\def\topscrollX{11mm}
+	\def\topscrollY{-6.5mm}
+	\def\midscrollX{55mm}
+	\def\midscrollY{-56mm}
+	\setUndeadBackground{#1}
+}
+\newcommand{\setUndeadBackground}[1]{%
+	% \placeBaseLayer{characters}
+	\placeIllustration{35.4mm}{-34mm}{50mm}{include/pics/undead/#1}
+	\placeLayout{include/background/undead}
 }
 
-\newcommand{\setUndeadBackground}[1]{
-  \begin{tikzpicture}[overlay, remember picture]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% DECK CARDS
 
-    \placeBaseLayer{characters}
-    \placeIllustration{0.457}{0.36}{0.54}{include/pics/undead/#1}
-    \placeLayout{include/background/undead5}
-
-    \StrLen{#1}[\picNameLen]
-    \ifthenelse{\picNameLen > \scrollOneThresh}{
-      \placeScroll{0.17}{0.05}{2}
-    }{
-      \placeScroll{0.17}{0.05}{1}
-    }
-
-    \placeScroll{0.57}{0.58}{1}
-
-  \end{tikzpicture}
+\newcommand{\setCardDeck}[3]{
+	\def\textBoxX{12mm}
+	\def\textBoxY{-60mm}
+	\def\textBoxSize{46.5mm}
+	\def\textShape{ {23.25}
+		{0} b{0} \\
+		{0} t{1.5}{45} \\
+		{6} t{1.5}{45} \\
+		{6.5} t{0}{46.5} \\
+		{21}  t{0}{46.5} \\
+		{21} t{13.5}{32} \\
+		{22} t{17.5}{29} \\
+		{26} t{17.5}{29} \\
+		{26} e{46.5}
+	}
+	\def\topscrollX{11mm}
+	\def\topscrollY{-6.5mm}
+	\def\midscrollX{55mm}
+	\def\midscrollY{-56mm}
+	\setSpellBackground{#2}{#1}
+}
+\newcommand{\setDeckBackground}[2]{
+	% \placeBaseLayer{decks}
+	\placeIllustration{35.4mm}{-34mm}{50mm}{include/pics/decks/#1}
+	\placeLayout{include/background/#2}
 }
 
-% DECK CARDS
-
-%%%%%%%%%%
-% SPELLS %
-%%%%%%%%%%
-
+%% SPELLS
 \newcommand{\setCardSpell}[2]{
-    \gdef\nameX{0.2}
-    \gdef\nameY{0.975}
-    \gdef\nameBoxsize{0.6}
-
-    \gdef\raceX{0.18}
-    \gdef\raceY{0.4}
-    \gdef\raceBoxsize{0.3}
-
-    \gdef\textX{0.14}
-    \gdef\textY{0.26}
-    \gdef\textBoxsize{0.7}
-
-    \setSpellBackground{#1}
+	\setCardDeck{spell_no_scroll}{#1}{#2}
 }
 
-\newcommand{\setSpellBackground}[1]{
-  \begin{tikzpicture}[overlay, remember picture]
-
-    \placeBaseLayer{decks}
-    \placeIllustration{0.4}{0.33}{0.54}{include/pics/decks/#1}
-    \placeLayout{include/background/spell_no_scroll}
-
-    \placeTitleScroll
-    \placeScroll{0.22}{0.6}{1}
-
-  \end{tikzpicture}
-}
-
-%%%%%%%%%%%%%
-% Equipment %
-%%%%%%%%%%%%%
-
+%% Equipment
 \newcommand{\setCardEquipment}[2]{
-    \gdef\nameX{0.2}
-    \gdef\nameY{0.977}
-    \gdef\nameBoxsize{0.6}
-
-    \gdef\raceX{0.2}
-    \gdef\raceY{0.4}
-    \gdef\raceBoxsize{0.3}
-
-    \gdef\textX{0.14}
-    \gdef\textY{0.26}
-    \gdef\textBoxsize{0.7}
-
-    \setEquipmentBackground{#1}
+	\setCardDeck{equipment}{#1}{#2}
 }
 
-\newcommand{\setEquipmentBackground}[1]{
-  \begin{tikzpicture}[overlay, remember picture]
-
-    \placeBaseLayer{decks}
-    \placeIllustration{0.4}{0.33}{0.54}{include/pics/decks/#1}
-    \placeLayout{include/background/equipment}
-
-    \placeTitleScroll
-
-  \end{tikzpicture}
-}
-
-%%%%%%%%%%
-% Cursed %
-%%%%%%%%%%
-
-\newcommand{\setCardEquipmentCursed}[2]{
-    \gdef\nameX{0.2}
-    \gdef\nameY{0.977}
-    \gdef\nameBoxsize{0.6}
-
-    \gdef\raceX{0.28}
-    \gdef\raceY{0.4}
-    \gdef\raceBoxsize{0.3}
-
-    \gdef\textX{0.145}
-    \gdef\textY{0.28}
-    \gdef\textBoxsize{0.7}
-
-    \setEquipmentCursedBackground{#1}
-}
-
-\newcommand{\setEquipmentCursedBackground}[1]{
-  \begin{tikzpicture}[overlay, remember picture]
-
-    \placeBaseLayer{decks}
-    \placeIllustration{0.4}{0.33}{0.54}{include/pics/decks/#1}
-    % \placeLayout{include/background/equipment_cursed1}
-    \placeLayout{include/background/equipment_cursed_v3}
-    % \placeLayout{include/background/equipment}
-    % \placeLayout{include/background/curse_overlay}
-    % \placeCurse{0.76}{0.6}
-    \placeCurse{0.02}{0.87}
-    % \placeCurse{0.01}{0.85}
-
-    \placeTitleScroll
-
-  \end{tikzpicture}
-}
-
-%%%%%%%%%
-% Event %
-%%%%%%%%%
-
+%% Event
 \newcommand{\setCardEvent}[2]{
-    \gdef\nameX{0.2}
-    \gdef\nameY{0.975}
-    \gdef\nameBoxsize{0.6}
-
-    \gdef\raceX{0.18}
-    \gdef\raceY{0.4}
-    \gdef\raceBoxsize{0.3}
-
-    \gdef\textX{0.14}
-    \gdef\textY{0.26}
-    \gdef\textBoxsize{0.7}
-
-    \setEventBackground{#1}
+	\setCardDeck{event_no_scroll}{#1}{#2}
 }
 
-\newcommand{\setEventBackground}[1]{
-  \begin{tikzpicture}[overlay, remember picture]
-
-    \placeBaseLayer{decks}
-    \placeIllustration{0.4}{0.33}{0.54}{include/pics/decks/#1}
-    \placeLayout{include/background/event_no_scroll.png}
-
-    \placeTitleScroll
-    \placeScroll{0.22}{0.6}{1}
-
-  \end{tikzpicture}
-}
-
-%%%%%%%%%%%%%%%
-% Enchantment %
-%%%%%%%%%%%%%%%
-
+%% Enchantment
 \newcommand{\setCardEnchantment}[2]{
-    \gdef\nameX{0.2}
-    \gdef\nameY{0.975}
-    \gdef\nameBoxsize{0.6}
-
-    \gdef\raceX{0.21}
-    \gdef\raceY{0.4}
-    \gdef\raceBoxsize{0.3}
-
-    \gdef\textX{0.14}
-    \gdef\textY{0.27}
-    \gdef\textBoxsize{0.7}
-
-    \setEnchantmentBackground{#1}
+	\setCardDeck{spell_no_scroll}{#1}{#2}
 }
 
-\newcommand{\setEnchantmentBackground}[1]{
-  \begin{tikzpicture}[overlay, remember picture]
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % Cursed %
 
-    \placeBaseLayer{decks}
-    \placeIllustration{0.4}{0.33}{0.54}{include/pics/decks/#1}
-    \placeLayout{include/background/spell_no_scroll.png}
+% \newcommand{\setCardEquipmentCursed}[2]{
+%     \gdef\nameX{0.2}
+%     \gdef\nameY{0.977}
+%     \gdef\nameBoxsize{0.6}
 
-    \placeTitleScroll
-    \placeScroll{0.25}{0.6}{2}
+%     \gdef\raceX{0.28}
+%     \gdef\raceY{0.4}
+%     \gdef\raceBoxsize{0.3}
 
-  \end{tikzpicture}
-}
+%     \gdef\textX{0.145}
+%     \gdef\textY{0.28}
+%     \gdef\textBoxsize{0.7}
+
+%     \setEquipmentCursedBackground{#1}
+% }
+
+% \newcommand{\setEquipmentCursedBackground}[1]{
+%   \begin{tikzpicture}[overlay, remember picture]
+
+%     \placeBaseLayer{decks}
+%     \placeIllustration{0.4}{0.33}{0.54}{include/pics/decks/#1}
+%     % \placeLayout{include/background/equipment_cursed1}
+%     \placeLayout{include/background/equipment_cursed_v3}
+%     % \placeLayout{include/background/equipment}
+%     % \placeLayout{include/background/curse_overlay}
+%     % \placeCurse{0.76}{0.6}
+%     \placeCurse{0.02}{0.87}
+%     % \placeCurse{0.01}{0.85}
+
+%     \placeTitleScroll
+
+%   \end{tikzpicture}
+% }
+
+

@@ -7,8 +7,18 @@
 \usepackage{tikz}
 \usepackage{calc}
 \usepackage{xstring,xifthen}
+\usepackage{shapepar}
 
-\usepackage[paperwidth=2.5in,paperheight=3.5in,margin=0.1mm,showframe]{geometry}
+% card dimensions:  63.5mm * 88mm (MTG is 63mm * 88mm)
+% margin: 2mm
+\def\cardwidth{63.5mm}
+\def\cardheight{88mm}
+\def\cardmargin{2mm}
+\def\cardpaperwidth{67.5mm}
+\def\cardpaperheight{92mm}
+\setlength{\parindent}{0pt}
+
+\usepackage[paperwidth=\cardpaperwidth,paperheight=\cardpaperheight,margin=0.1mm,showframe]{geometry}
 \setmainfont{ringCS-LT.otf}
 
 \usepackage[pscoord]{eso-pic} % The zero point of the coordinate systemis the lower left corner of the page (the default).
