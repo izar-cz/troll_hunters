@@ -35,8 +35,7 @@
 			\draw (\cardwidth,\cardmargin) -- (\cardwidth,0) -- (\cardwidth+\cardmargin,0);
 			\draw (\cardwidth+\cardmargin,-\cardheight) -- (\cardwidth,-\cardheight) -- (\cardwidth,-\cardheight-\cardmargin);
 			\draw (-\cardmargin,-\cardheight) -- (0,-\cardheight) -- (0,-\cardheight-\cardmargin);
-			\gdef\name{#3}
-			\gdef\class{#2}
+			\def\class{#2}
 } {%
 		\end{scope}%
 	\end{tikzpicture}%
@@ -47,11 +46,10 @@
 %% "public" macros to be used within the card environment
 %%
 \newcommand{\cardName}[1]{%
-	\placeScroll{\topscrollX}{\topscrollY}{{#1}}{right}
+	\placeScroll{{#1}}{7.5}{\topscrollX}{\topscrollY}{\topscrollAlignment}
 }
 \newcommand{\cardRace}[1]{%
-	\placeScroll{\midscrollX}{\midscrollY}{{#1}}{left}
-	% \placeScroll{\midscrollX}{\midscrollY}{{\fontsize{8}{8.3}\selectfont #1}}{left} % TODO
+	\placeScroll{{\fontsize{8}{8.3}\selectfont #1}}{6}{\midscrollX}{\midscrollY}{\midscrollAlignment}
 }
 \newcommand{\cardHP}[1]{%
 	\node[opacity=1] at (\hpX,\hpY) {#1};
@@ -63,9 +61,9 @@
 	}%
 }
 \newcommand{\cardDoubleText}[2]{%
-	\cardText{%
+	\cardAnyText{%
 		\fontsize{7}{7.3}\selectfont #1%
-		\linebreak\includegraphics[width=\textBoxSize]{include/misc/simple-divider.png}\linebreak
+		\\\includegraphics[width=\textBoxSize]{include/misc/simple-divider.png}\\%
 		#2%
 	}
 }
@@ -83,20 +81,23 @@
 }
 
 \newlength{\currentScrollWidth}
-% adds "scroll" at coordinates (#1, #2) with text #3 and alignment #4
-\newcommand{\placeScroll}[4]{%
-	\edef\scrollheight{7mm}
-	\node[#4,opacity=1,inner sep=-4mm] at (#1,#2) {%
-		\settowidth{\currentScrollWidth}{\widthof{#3}}%
-		\ifthenelse{\lengthtest{\currentScrollWidth < 20mm}}{%
-			\includegraphics[height=\scrollheight]{include/misc/scroll_1.png}%
-		}{\ifthenelse{\lengthtest{\currentScrollWidth < 30mm}}{%
-			\includegraphics[height=\scrollheight]{include/misc/scroll_2.png}%
-		}{%
-			\includegraphics[height=\scrollheight]{include/misc/scroll_3.png}%
-		}}%
+%% place "scroll" with text at the specified place on the card.
+%% #1        text
+%% #2        scroll height (TODO)
+%% #3, #4    anchor coordinates on the card
+%% #5        anchor position ("right", "left" or "") relative to the scroll
+\newcommand{\placeScroll}[5]{%
+	\node (scroll) [opacity=1,inner sep=-0mm,#5] at (#3,#4) {%
+		\settowidth{\currentScrollWidth}{\widthof{#1}}%
+		\def\bgnum{6}
+		\ifdim\currentScrollWidth<38mm \def\bgnum{5}\fi
+		\ifdim\currentScrollWidth<33mm \def\bgnum{4}\fi
+		\ifdim\currentScrollWidth<30mm \def\bgnum{3}\fi
+		\ifdim\currentScrollWidth<26mm \def\bgnum{2}\fi
+		\ifdim\currentScrollWidth<19mm \def\bgnum{1}\fi
+		\includegraphics[height=7mm]{include/misc/scroll_\bgnum.png}%
 	};
-	\node[#4,opacity=1,inner sep=0pt] at (#1,#2) {#3};
+	\node [opacity=1,inner sep=0pt] at (scroll.center) {#1};
 }
 
 % adds card illustration at coordinates (#1, #2) with height #3 from file name #4
@@ -111,8 +112,8 @@
 }
 
 \newcommand{\placeBaseLayer}[1]{ % TODO: remove
-  \node[opacity=1,inner sep=0pt] at (current page.center)
-    {\includegraphics[width=\cardwidth,height=\cardheight]{include/background/#1.jpg}};
+	\node[opacity=1,inner sep=0pt] at (current page.center)
+		{\includegraphics[width=\cardwidth,height=\cardheight]{include/background/#1.jpg}};
 }
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
@@ -137,16 +138,27 @@
 % }
 
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% CHARACTER CARDS
+\newcommand{\setCardCharacter}{
+	% defaut values for character cards (values from orc layout)
+	\def\hpX{55.4mm}
+	\def\hpY{-8mm}
+	\def\textBoxX{12mm}
+	\def\textBoxY{-60mm}
+	\def\textBoxSize{46.5mm}
+	\def\topscrollX{11mm}
+	\def\topscrollY{-6.5mm}
+	\def\topscrollAlignment{right}
+	\def\midscrollX{59mm}
+	\def\midscrollY{-56mm}
+	\def\midscrollAlignment{left}
+}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ORCS
 
 \newcommand{\setCardOrc}[2]{
-	\def\hpX{55.4mm}
-	\def\hpY{-7mm}
-	\def\textBoxX{12mm}
-	\def\textBoxY{-60mm}
-	\def\textBoxSize{46.5mm}
+	\setCardCharacter
 	\def\textShape{ {23.25}
 		{0} b{0} \\
 		{0} t{1.5}{45} \\
@@ -158,15 +170,8 @@
 		{26} t{17.5}{29} \\
 		{26} e{46.5}
 	}
-	\def\topscrollX{11mm}
-	\def\topscrollY{-6.5mm}
-	\def\midscrollX{55mm}
-	\def\midscrollY{-56mm}
-	\setOrcBackground{#1}
-}
-\newcommand{\setOrcBackground}[1]{%
 	% \placeBaseLayer{characters}
-	\placeIllustration{35.4mm}{-34mm}{50mm}{include/pics/orc/#1}
+	\placeIllustration{35.4mm}{-33.4mm}{50mm}{include/pics/orc/#1}
 	\placeLayout{include/background/orc}
 }
 
@@ -174,11 +179,8 @@
 %% DWARFS
 
 \newcommand{\setCardDwarf}[2]{
-	\def\hpX{55.4mm}
+	\setCardCharacter
 	\def\hpY{-7mm}
-	\def\textBoxX{12mm}
-	\def\textBoxY{-60mm}
-	\def\textBoxSize{46.5mm}
 	\def\textShape{ {23.25}
 		{0} b{0} \\
 		{0} t{1.5}{45} \\
@@ -190,14 +192,6 @@
 		{26} t{17.5}{29} \\
 		{26} e{46.5}
 	}
-	\def\topscrollX{11mm}
-	\def\topscrollY{-6.5mm}
-	\def\midscrollX{55mm}
-	\def\midscrollY{-56mm}
-	\setDwarfBackground{#1}
-}
-
-\newcommand{\setDwarfBackground}[1]{
 	% \placeBaseLayer{characters}
 	\placeIllustration{35.4mm}{-34mm}{50mm}{include/pics/dwarf/#1}
 	\placeLayout{include/background/dwarf}
@@ -205,13 +199,11 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ELVES
-
 \newcommand{\setCardElf}[2]{
+	\setCardCharacter
 	\def\hpX{54.2mm}
 	\def\hpY{-9mm}
 	\def\textBoxX{11mm}
-	\def\textBoxY{-60mm}
-	\def\textBoxSize{46.5mm}
 	\def\textShape{ {23.25}
 		{0} b{0} \\
 		{0} t{1.5}{45} \\
@@ -223,16 +215,8 @@
 		{26} t{17.5}{29} \\
 		{26} e{46.5}
 	}
-	\def\topscrollX{11mm}
-	\def\topscrollY{-6.5mm}
-	\def\midscrollX{55mm}
-	\def\midscrollY{-56mm}
-	\setElfBackground{#1}
-}
-
-\newcommand{\setElfBackground}[1]{
 	% \placeBaseLayer{characters}
-	\placeIllustration{35.4mm}{-34mm}{50mm}{include/pics/elf/#1}
+	\placeIllustration{35.4mm}{-33mm}{50mm}{include/pics/elf/#1}
 	\placeLayout{include/background/elf}
 }
 
@@ -241,11 +225,8 @@
 %% LONG
 
 \newcommand{\setCardLongNeutral}[2]{
-	\def\hpX{55.4mm}
+	\setCardCharacter
 	\def\hpY{-7mm}
-	\def\textBoxX{12mm}
-	\def\textBoxY{-60mm}
-	\def\textBoxSize{46.5mm}
 	\def\textShape{ {23.25}
 		{0} b{0} \\
 		{0} t{1.5}{45} \\
@@ -257,16 +238,8 @@
 		{26} t{17.5}{29} \\
 		{26} e{46.5}
 	}
-	\def\topscrollX{11mm}
-	\def\topscrollY{-6.5mm}
-	\def\midscrollX{55mm}
-	\def\midscrollY{-56mm}
-	\setNeutralLongBackground{#1}
-}
-
-\newcommand{\setNeutralLongBackground}[1]{
 	% \placeBaseLayer{characters}
-	\placeIllustration{35.4mm}{-34mm}{50mm}{include/pics/neutral/#1}
+	\placeIllustration{35.4mm}{-32.8mm}{50mm}{include/pics/neutral/#1}
 	\placeLayout{include/background/neutral_tall}
 }
 
@@ -275,11 +248,8 @@
 %% SHORT
 
 \newcommand{\setCardShortNeutral}[2]{
-	\def\hpX{55.4mm}
+	\setCardCharacter
 	\def\hpY{-7mm}
-	\def\textBoxX{12mm}
-	\def\textBoxY{-60mm}
-	\def\textBoxSize{46.5mm}
 	\def\textShape{ {23.25}
 		{0} b{0} \\
 		{0} t{1.5}{45} \\
@@ -291,16 +261,8 @@
 		{26} t{17.5}{29} \\
 		{26} e{46.5}
 	}
-	\def\topscrollX{11mm}
-	\def\topscrollY{-6.5mm}
-	\def\midscrollX{55mm}
-	\def\midscrollY{-56mm}
-	\setNeutralShortBackground{#1}
-}
-
-\newcommand{\setNeutralShortBackground}[1]{
 	% \placeBaseLayer{characters}
-	\placeIllustration{35.4mm}{-34mm}{50mm}{include/pics/neutral/#1}
+	\placeIllustration{35.4mm}{-32.8mm}{50mm}{include/pics/neutral/#1}
 	\placeLayout{include/background/neutral_short}
 }
 
@@ -308,11 +270,8 @@
 %% Undead
 
 \newcommand{\setCardUndead}[2]{
-	\def\hpX{55.4mm}
+	\setCardCharacter
 	\def\hpY{-7mm}
-	\def\textBoxX{12mm}
-	\def\textBoxY{-60mm}
-	\def\textBoxSize{46.5mm}
 	\def\textShape{ {23.25}
 		{0} b{0} \\
 		{0} t{1.5}{45} \\
@@ -324,18 +283,10 @@
 		{26} t{17.5}{29} \\
 		{26} e{46.5}
 	}
-	\def\topscrollX{11mm}
-	\def\topscrollY{-6.5mm}
-	\def\midscrollX{55mm}
-	\def\midscrollY{-56mm}
-	\setUndeadBackground{#1}
-}
-\newcommand{\setUndeadBackground}[1]{%
 	% \placeBaseLayer{characters}
-	\placeIllustration{35.4mm}{-34mm}{50mm}{include/pics/undead/#1}
+	\placeIllustration{35.5mm}{-34mm}{50mm}{include/pics/undead/#1}
 	\placeLayout{include/background/undead}
 }
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% DECK CARDS
 
@@ -354,21 +305,20 @@
 		{26} t{17.5}{29} \\
 		{26} e{46.5}
 	}
-	\def\topscrollX{11mm}
+	\def\topscrollX{31.75mm}
 	\def\topscrollY{-6.5mm}
-	\def\midscrollX{55mm}
+	\def\topscrollAlignment{}
+	\def\midscrollX{11mm}
 	\def\midscrollY{-56mm}
-	\setSpellBackground{#2}{#1}
-}
-\newcommand{\setDeckBackground}[2]{
+	\def\midscrollAlignment{right}
 	% \placeBaseLayer{decks}
-	\placeIllustration{35.4mm}{-34mm}{50mm}{include/pics/decks/#1}
-	\placeLayout{include/background/#2}
+	\placeIllustration{35.4mm}{-33.5mm}{50mm}{include/pics/decks/#2}
+	\placeLayout{include/background/#1}
 }
 
 %% SPELLS
 \newcommand{\setCardSpell}[2]{
-	\setCardDeck{spell_no_scroll}{#1}{#2}
+	\setCardDeck{spell}{#1}{#2}
 }
 
 %% Equipment
@@ -376,14 +326,19 @@
 	\setCardDeck{equipment}{#1}{#2}
 }
 
+%% Cursed Equipment
+\newcommand{\setCardEquipmentCursed}[2]{
+	\setCardDeck{equipment}{#1}{#2}
+}
+
 %% Event
 \newcommand{\setCardEvent}[2]{
-	\setCardDeck{event_no_scroll}{#1}{#2}
+	\setCardDeck{event}{#1}{#2}
 }
 
 %% Enchantment
 \newcommand{\setCardEnchantment}[2]{
-	\setCardDeck{spell_no_scroll}{#1}{#2}
+	\setCardDeck{enchantment}{#1}{#2}
 }
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
