@@ -30,12 +30,13 @@
 	\begin{tikzpicture}[overlay, remember picture, shift={(current page.north west)}]% coordinates are relative to the paper's top left corner
 		\begin{scope}[shift={(\cardmargin,-\cardmargin)}]% coordinates are relative to the card's top left corner
 			\csname setCard#2\endcsname{#3}{#1}
-			% \draw[red] (0mm,0mm) rectangle (\cardwidth,-\cardheight); % card border
 			\draw (-\cardmargin,0) -- (0,0) -- (0,\cardmargin);
 			\draw (\cardwidth,\cardmargin) -- (\cardwidth,0) -- (\cardwidth+\cardmargin,0);
 			\draw (\cardwidth+\cardmargin,-\cardheight) -- (\cardwidth,-\cardheight) -- (\cardwidth,-\cardheight-\cardmargin);
 			\draw (-\cardmargin,-\cardheight) -- (0,-\cardheight) -- (0,-\cardheight-\cardmargin);
 			\def\class{#2}
+			%DEBUG:
+			%\draw[red,rounded corners] (0mm,0mm) rectangle (\cardwidth,-\cardheight); % card border
 } {%
 		\end{scope}%
 	\end{tikzpicture}%
@@ -52,7 +53,7 @@
 	\placeScroll{{\fontsize{8}{8.3}\selectfont #1}}{6}{\midscrollX}{\midscrollY}{\midscrollAlignment}
 }
 \newcommand{\cardHP}[1]{%
-	\node[opacity=1] at (\hpX,\hpY) {#1};
+	\node at (\hpX,\hpY) {#1};
 }
 \newcommand{\cardText}[1]{%
 	\cardAnyText{%
@@ -72,7 +73,7 @@
 %%
 \newcommand{\cardAnyText}[1]{%
 	% \draw [yellow] (\textBoxX,\textBoxY) rectangle (\textBoxX+\textBoxSize,\textBoxY-1cm);
-	\node[opacity=1,inner sep=0pt, anchor=north west] at (\textBoxX,\textBoxY)
+	\node[inner sep=0pt, anchor=north west] at (\textBoxX,\textBoxY)
 		{\parbox{\textBoxSize}{%
 			\shapepar[1mm]{\textShape}%
 			#1%
@@ -80,29 +81,52 @@
 		}};
 }
 
+
+\newcommand{\scrollThresholds}[1]{%
+	#1{6.6}{7}%
+	#1{6}{6}%
+	#1{5.429}{5}%
+	#1{4.8}{4}%
+	#1{4.2}{3}%
+	#1{3.714}{2}%
+	#1{2.714}{1}%
+}
 \newlength{\currentScrollWidth}
+
+\newcommand{\scrollThresholdOutline}[2]{% DEBUG
+	\edef\threshold{\fpeval{#1*\scrollheightfactor}}%
+	\draw [red,inner sep=-0mm] ($(scroll.center) + (-0.5*\threshold mm,-0.5*\scrollheightfactor mm)$) rectangle ($(scroll.center) + (0.5*\threshold mm,0.5*\scrollheightfactor mm)$);
+	\node [inner sep=0mm] at ($(scroll.center) + (0,-5mm)$) {%
+		\includegraphics[height=\scrollheightfactor mm]{include/misc/scroll_#2.png}%
+	};
+}
+\newcommand{\scrollThreshold}[2]{%
+	\edef\threshold{\fpeval{#1*\scrollheightfactor}}%
+	% \node at (\scrollheightfactor cm - 2cm, -#2 cm) {\the\currentScrollWidth};
+	\ifdim\currentScrollWidth<\threshold mm\relax \def\bgnum{#2}\fi%
+}%
 %% place "scroll" with text at the specified place on the card.
 %% #1        text
 %% #2        scroll height (TODO)
 %% #3, #4    anchor coordinates on the card
 %% #5        anchor position ("right", "left" or "") relative to the scroll
 \newcommand{\placeScroll}[5]{%
-	\node (scroll) [opacity=1,inner sep=-0mm,#5] at (#3,#4) {%
-		\settowidth{\currentScrollWidth}{\widthof{#1}}%
-		\def\bgnum{6}
-		\ifdim\currentScrollWidth<38mm \def\bgnum{5}\fi
-		\ifdim\currentScrollWidth<33mm \def\bgnum{4}\fi
-		\ifdim\currentScrollWidth<30mm \def\bgnum{3}\fi
-		\ifdim\currentScrollWidth<26mm \def\bgnum{2}\fi
-		\ifdim\currentScrollWidth<19mm \def\bgnum{1}\fi
-		\includegraphics[height=7mm]{include/misc/scroll_\bgnum.png}%
+	\def\scrollheightfactor{#2}
+	\node (scroll) [inner sep=-0mm,#5] at (#3,#4) {%
+		\settowidth{\currentScrollWidth}{#1}%
+		\def\bgnum{6}%
+		\scrollThresholds{\scrollThreshold}%
+		\includegraphics[height=\scrollheightfactor mm]{include/misc/scroll_\bgnum.png}%
 	};
-	\node [opacity=1,inner sep=0pt] at (scroll.center) {#1};
+	\node [
+		text height=1ex,text depth=.25ex % fix the baseline, so the text is correctly vertically aligned on the scroll
+	] at (scroll.center) {#1};
+	% \scrollThresholds{\scrollThresholdOutline} % for debugging only
 }
 
 % adds card illustration at coordinates (#1, #2) with height #3 from file name #4
 \newcommand{\placeIllustration}[4]{%
-	\node[opacity=1,inner sep=0pt] at (#1,#2)
+	\node[inner sep=0pt] at (#1,#2)
 		{\includegraphics[height=#3]{#4}};
 }
 
@@ -112,31 +136,9 @@
 }
 
 \newcommand{\placeBaseLayer}[1]{ % TODO: remove
-	\node[opacity=1,inner sep=0pt] at (current page.center)
+	\node[inner sep=0pt] at (current page.center)
 		{\includegraphics[width=\cardwidth,height=\cardheight]{include/background/#1.jpg}};
 }
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%
-
-% \newcommand{\placeCursedScroll}[3]{
-%   \node[opacity=0.7,inner sep=0pt] at (#1\cardwidth,-#2\cardheight)
-%     {\includegraphics[height=0.09\cardheight]{include/misc/scroll_#3_cursed.png}};
-% }
-
-% \newcommand{\placeTitleScroll}{
-%   \node[opacity=1,inner sep=0pt] at (0.38\cardwidth,-0.027\cardheight)
-%     % scroll_4_light?
-%     % {\includegraphics[height=0.097\cardheight]{include/misc/scroll_4_cursed.png}};
-%     {\includegraphics[height=0.097\cardheight]{include/misc/scroll_4.png}};
-% }
-
-% \newcommand{\placeCurse}[2]{
-%   \node[opacity=1,inner sep=0pt] at (#1\cardwidth,-#2\cardheight)
-%     {\includegraphics[height=0.13\cardheight]{include/misc/loc_curse2.png}}; %
-%   % \node[opacity=1,inner sep=0pt] at (#1\cardwidth,-#2\cardheight)
-%   %   {\includegraphics[height=0.15\cardheight]{include/misc/curse.png}};
-% }
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% CHARACTER CARDS
@@ -164,10 +166,10 @@
 		{0} t{1.5}{45} \\
 		{6} t{1.5}{45} \\
 		{6.5} t{0}{46.5} \\
-		{21}  t{0}{46.5} \\
-		{21} t{13.5}{32} \\
-		{22} t{17.5}{29} \\
-		{26} t{17.5}{29} \\
+		{10}  t{0}{46.5} \\
+		{15} t{4}{42.5} \\
+		{20} t{3}{43.5} \\
+		{26} t{0}{46.5} \\
 		{26} e{46.5}
 	}
 	% \placeBaseLayer{characters}
@@ -176,7 +178,7 @@
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% DWARFS
+%% DWARVES
 
 \newcommand{\setCardDwarf}[2]{
 	\setCardCharacter
@@ -201,18 +203,18 @@
 %% ELVES
 \newcommand{\setCardElf}[2]{
 	\setCardCharacter
-	\def\hpX{54.2mm}
-	\def\hpY{-9mm}
+	\def\hpX{55.2mm}
+	\def\hpY{-8.2mm}
 	\def\textBoxX{11mm}
 	\def\textShape{ {23.25}
 		{0} b{0} \\
 		{0} t{1.5}{45} \\
 		{6} t{1.5}{45} \\
 		{6.5} t{0}{46.5} \\
-		{21}  t{0}{46.5} \\
-		{21} t{13.5}{32} \\
-		{22} t{17.5}{29} \\
-		{26} t{17.5}{29} \\
+		{10}  t{0}{46.5} \\
+		{15} t{4}{42.5} \\
+		{20} t{3}{43.5} \\
+		{26} t{0}{46.5} \\
 		{26} e{46.5}
 	}
 	% \placeBaseLayer{characters}
@@ -309,7 +311,7 @@
 	\def\topscrollY{-6.5mm}
 	\def\topscrollAlignment{}
 	\def\midscrollX{11mm}
-	\def\midscrollY{-56mm}
+	\def\midscrollY{-53.5mm}
 	\def\midscrollAlignment{right}
 	% \placeBaseLayer{decks}
 	\placeIllustration{35.4mm}{-33.5mm}{50mm}{include/pics/decks/#2}
@@ -328,7 +330,7 @@
 
 %% Cursed Equipment
 \newcommand{\setCardEquipmentCursed}[2]{
-	\setCardDeck{equipment}{#1}{#2}
+	\setCardDeck{equipment_cursed}{#1}{#2}
 }
 
 %% Event
