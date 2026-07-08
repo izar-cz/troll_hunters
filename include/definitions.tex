@@ -1,5 +1,6 @@
-%% variables
+%% debugging variables
 \def\backgroundOpacity{1}
+\def\doBacks{0} % 1 or 0
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% card evironment
@@ -25,23 +26,47 @@
 
 %   #3 - image name
 
+\def\cardOrientation{0}% by default, cards are 'portrait'
 
 \newenvironment{card}[3] {%
+	\def\carddeck{#1}%
+	\begin{aCard}
+		\def\class{#2}
+		\csname setCard#2\endcsname{#3}{#1}
+		\aCardDecoration
+} {%
+	\end{aCard}%
+	\ifnum\doBacks=1
+		\begin{aCard}
+			\node[inner sep=0pt] at (current page.center)
+				{\includegraphics[width=\cardpaperwidth,height=\cardpaperheight]{include/misc/back.png}};
+			\node[inner sep=0pt] at (current page.center)
+				{\includegraphics[width=\cardpaperwidth,height=\cardpaperheight]{include/misc/symbol\carddeck.png}};
+			\aCardDecoration
+		\end{aCard}%
+	\fi
+}
+
+
+%% auxiliary environment for any card (used for fronts, backs and locations)
+\newenvironment{aCard} {%
 	\begin{tikzpicture}[overlay, remember picture, shift={(current page.north west)}]% coordinates are relative to the paper's top left corner
 		\begin{scope}[shift={(\cardmargin,-\cardmargin)}]% coordinates are relative to the card's top left corner
-			\csname setCard#2\endcsname{#3}{#1}
-			\draw (-\cardmargin,0) -- (0,0) -- (0,\cardmargin);
-			\draw (\cardwidth,\cardmargin) -- (\cardwidth,0) -- (\cardwidth+\cardmargin,0);
-			\draw (\cardwidth+\cardmargin,-\cardheight) -- (\cardwidth,-\cardheight) -- (\cardwidth,-\cardheight-\cardmargin);
-			\draw (-\cardmargin,-\cardheight) -- (0,-\cardheight) -- (0,-\cardheight-\cardmargin);
-			\def\class{#2}
-			%DEBUG:
-			%\draw[red,rounded corners] (0mm,0mm) rectangle (\cardwidth,-\cardheight); % card border
-} {%
+}{%
 		\end{scope}%
 	\end{tikzpicture}%
 	\newpage%
 }
+\def\aCardDecoration{%
+	\draw (-\cardmargin,0) -- (0,0) -- (0,\cardmargin);
+	\draw (\cardwidth,\cardmargin) -- (\cardwidth,0) -- (\cardwidth+\cardmargin,0);
+	\draw (\cardwidth+\cardmargin,-\cardheight) -- (\cardwidth,-\cardheight) -- (\cardwidth,-\cardheight-\cardmargin);
+	\draw (-\cardmargin,-\cardheight) -- (0,-\cardheight) -- (0,-\cardheight-\cardmargin);
+
+	%DEBUG:
+	%\draw[red,rounded corners] (0mm,0mm) rectangle (\cardwidth,-\cardheight); % card border
+}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% "public" macros to be used within the card environment
@@ -52,6 +77,7 @@
 \newcommand{\cardRace}[1]{%
 	\placeScroll{{\fontsize{8}{8.3}\selectfont #1}}{6}{\midscrollX}{\midscrollY}{\midscrollAlignment}
 }
+\let\cardType\cardRace
 \newcommand{\cardHP}[1]{%
 	\node at (\hpX,\hpY) {#1};
 }
@@ -112,13 +138,13 @@
 %% #5        anchor position ("right", "left" or "") relative to the scroll
 \newcommand{\placeScroll}[5]{%
 	\def\scrollheightfactor{#2}
-	\node (scroll) [inner sep=-0mm,#5] at (#3,#4) {%
+	\node (scroll) [rotate=\cardOrientation,inner sep=-0mm,#5] at (#3,#4) {%
 		\settowidth{\currentScrollWidth}{#1}%
 		\def\bgnum{6}%
 		\scrollThresholds{\scrollThreshold}%
-		\includegraphics[height=\scrollheightfactor mm]{include/misc/scroll_\bgnum.png}%
+		\includegraphics[height=\scrollheightfactor mm]{include/scroll/scroll_\bgnum.png}%
 	};
-	\node [
+	\node [rotate=\cardOrientation,
 		text height=1ex,text depth=.25ex % fix the baseline, so the text is correctly vertically aligned on the scroll
 	] at (scroll.center) {#1};
 	% \scrollThresholds{\scrollThresholdOutline} % for debugging only
@@ -293,19 +319,17 @@
 %% DECK CARDS
 
 \newcommand{\setCardDeck}[3]{
-	\def\textBoxX{12mm}
-	\def\textBoxY{-60mm}
-	\def\textBoxSize{46.5mm}
-	\def\textShape{ {23.25}
+	\def\textBoxX{6mm}
+	\def\textBoxY{-57mm}
+	\def\textBoxSize{51mm}
+	\def\textShape{ {25.5}
 		{0} b{0} \\
-		{0} t{1.5}{45} \\
-		{6} t{1.5}{45} \\
-		{6.5} t{0}{46.5} \\
-		{21}  t{0}{46.5} \\
-		{21} t{13.5}{32} \\
-		{22} t{17.5}{29} \\
-		{26} t{17.5}{29} \\
-		{26} e{46.5}
+		{0} t{0}{51} \\
+		{16} t{0}{51} \\
+		{16} t{7.5}{43.5} \\
+		{23} t{7.5}{43.5} \\
+		{27} t{13}{38} \\
+		{27} e{51}
 	}
 	\def\topscrollX{31.75mm}
 	\def\topscrollY{-6.5mm}
@@ -314,7 +338,7 @@
 	\def\midscrollY{-53.5mm}
 	\def\midscrollAlignment{right}
 	% \placeBaseLayer{decks}
-	\placeIllustration{35.4mm}{-33.5mm}{50mm}{include/pics/decks/#2}
+	\placeIllustration{35.4mm}{-31.5mm}{50mm}{include/pics/decks/#2}
 	\placeLayout{include/background/#1}
 }
 
@@ -381,3 +405,41 @@
 % }
 
 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % Locations %
+
+\newenvironment{locationCard}[1] {%
+	\def\topscrollX{57mm}
+	\def\topscrollY{-10mm}
+	\def\topscrollAlignment{right}
+	\begin{aCard}
+		\def\cardOrientation{-90}
+		\node(locationDice) at (56mm,-83mm) {D};
+		\node(locationBonus) at (8mm,-83mm) {B};
+		\node[rotate=\cardOrientation,inner sep=0pt] at (current page.center)
+			{\includegraphics[width=\cardpaperheight,height=\cardpaperwidth]{include/locations/#1}};
+} {
+		\aCardDecoration
+	\end{aCard}%
+}
+
+\newcommand{\locationName}[1]{
+	\placeScroll{{#1}}{7.5}{\topscrollX}{\topscrollY}{\topscrollAlignment}
+}
+\newcommand{\locationDice}[1]{
+	\node (locationDice) [above of=locationDice,outer sep=2mm,rotate=\cardOrientation]
+		{\includegraphics[width=8mm]{include/misc/circle.png}};
+	\node [rotate=\cardOrientation,
+		text height=1ex,text depth=.25ex % fix the baseline, so the text is correctly vertically aligned on the scroll
+	] at (locationDice.center) {#1};
+}
+\newcommand{\locationBonus}[1]{
+	\node (locationBonus) [above of=locationBonus,outer sep=2mm,rotate=\cardOrientation]
+		{\includegraphics[width=8mm]{include/misc/circle.png}};
+	% \node[rotate=\cardOrientation] {#1} at (locationBonus.center); % TODO
+	}
+\newcommand{\locationExtra}[1]{
+	\node [rotate=\cardOrientation] at (8mm,-13mm)
+		{\includegraphics[width=8mm]{include/misc/circle.png}};
+	% \node[rotate=\cardOrientation] {#1} at (locationBonus.center); % TODO
+}
