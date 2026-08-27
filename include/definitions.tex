@@ -211,7 +211,8 @@
 
 \newcommand{\setCardDwarf}[2]{
 	\setCardCharacter
-	\def\hpY{-7mm}
+	\def\hpX{55mm}
+	\def\hpY{-8.3mm}
 	\def\textShape{ {23.25}
 		{0} b{0} \\
 		{0} t{1.5}{45} \\
@@ -224,7 +225,7 @@
 		{26} e{46.5}
 	}
 	% \placeBaseLayer{characters}
-	\placeIllustration{35.4mm}{-34mm}{50mm}{include/pics/dwarf/#1}
+	\placeIllustration{35.4mm}{-33mm}{50mm}{include/pics/dwarf/#1}
 	\placeLayout{include/background/dwarf}
 }
 
@@ -341,7 +342,7 @@
 	\def\midscrollY{-53.5mm}
 	\def\midscrollAlignment{right}
 	% \placeBaseLayer{decks}
-	\placeIllustration{35.4mm}{-31.5mm}{50mm}{include/pics/decks/#2}
+	\placeIllustration{32.4mm}{-31.5mm}{50mm}{include/pics/decks/#2}
 	\placeLayout{include/background/#1}
 }
 
@@ -371,44 +372,6 @@
 }
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% % Cursed %
-
-% \newcommand{\setCardEquipmentCursed}[2]{
-%     \gdef\nameX{0.2}
-%     \gdef\nameY{0.977}
-%     \gdef\nameBoxsize{0.6}
-
-%     \gdef\raceX{0.28}
-%     \gdef\raceY{0.4}
-%     \gdef\raceBoxsize{0.3}
-
-%     \gdef\textX{0.145}
-%     \gdef\textY{0.28}
-%     \gdef\textBoxsize{0.7}
-
-%     \setEquipmentCursedBackground{#1}
-% }
-
-% \newcommand{\setEquipmentCursedBackground}[1]{
-%   \begin{tikzpicture}[overlay, remember picture]
-
-%     \placeBaseLayer{decks}
-%     \placeIllustration{0.4}{0.33}{0.54}{include/pics/decks/#1}
-%     % \placeLayout{include/background/equipment_cursed1}
-%     \placeLayout{include/background/equipment_cursed_v3}
-%     % \placeLayout{include/background/equipment}
-%     % \placeLayout{include/background/curse_overlay}
-%     % \placeCurse{0.76}{0.6}
-%     \placeCurse{0.02}{0.87}
-%     % \placeCurse{0.01}{0.85}
-
-%     \placeTitleScroll
-
-%   \end{tikzpicture}
-% }
-
-
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % % Locations %
 
 \newenvironment{locationCard}[1] {%
@@ -418,9 +381,11 @@
 	\begin{aCard}
 		\def\cardOrientation{-90}
 		\node(locationDice) at (54mm,-85mm) {D};
-		\node(locationBonus) at (10mm,-85mm) {B};
+		\node(locationBonus) at (10mm,-89mm) {B};
+		\edef\bgheight{77.47mm}% 1.22 * \cardwidth
+		\edef\bgwidth{107.36mm}% = 1.22 * \cardheight
 		\node[rotate=\cardOrientation,inner sep=0pt] at (current page.center)
-			{\includegraphics[width=\cardpaperheight,height=\cardpaperwidth]{include/locations/#1}};
+			{\includegraphics[width=\bgwidth,height=\bgheight]{include/locations/#1}};
 } {%
 		\aCardDecoration
 	\end{aCard}%
@@ -433,17 +398,15 @@
 	\node (locationDice) [above of=locationDice,outer sep=2mm,rotate=\cardOrientation]
 		{\includegraphics[width=8mm]{include/misc/circle.png}};
 	\node [rotate=\cardOrientation,
-		text height=6mm,text depth=4mm % fix the baseline, so the text is correctly vertically aligned on the scroll
-	] at (locationDice.center) {\fontsize{12}{12}\selectfont #1};
+		text height=8mm,text depth=5.4mm % fix the baseline, so the text is correctly vertically aligned on the scroll
+	] at (locationDice.center) {\fontsize{16}{16}\selectfont #1};
 }
 \newcommand{\locationBonus}[1]{
-	\node (locationBonus) [above of=locationBonus,outer sep=2mm,rotate=\cardOrientation]
-		{\includegraphics[width=10mm]{include/locations/bonus#1.png}};
+	\node (locationBonus) [outer sep=0mm,inner sep=0mm,rotate=\cardOrientation] at ($(locationBonus) + (0,12mm)$)
+		{\includegraphics[width=11mm]{include/locations/bonus#1.png}};
 }
 \newcommand{\locationExtra}[1]{
-	\node [rotate=\cardOrientation] at (8mm,-13mm)
-		{\includegraphics[width=8mm]{include/misc/circle.png}};
-	\node [rotate=\cardOrientation] at (8mm,-13mm)
-		{TODO};
+	\node [rotate=\cardOrientation] at (12mm,-13mm)
+		{\includegraphics[width=12mm]{include/locations/#1.png}};
 }
 \newcommand{\locationCardBack}{\cardBack{\relax}}
