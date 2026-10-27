@@ -75,10 +75,10 @@
 %% "public" macros to be used within the card environment
 %%
 \newcommand{\cardName}[1]{%
-	\placeScroll{{#1}}{7.5}{\topscrollX}{\topscrollY}{\topscrollAlignment}
+	\placeScroll{{\fontsize{10.5}{8.3}\selectfont #1}}{7.5}{\topscrollX}{\topscrollY}{\topscrollAlignment}
 }
 \newcommand{\cardRace}[1]{%
-	\placeScroll{{\fontsize{8}{8.3}\selectfont #1}}{6}{\midscrollX}{\midscrollY}{\midscrollAlignment}
+	\placeScroll{{\fontsize{9.3}{9.3}\selectfont #1}}{6.75}{\midscrollX}{\midscrollY}{\midscrollAlignment}
 }
 \let\cardType\cardRace
 \newcommand{\cardHP}[1]{%
@@ -86,16 +86,22 @@
 }
 \newcommand{\cardText}[1]{%
 	\cardAnyText{%
-		% \centering % TODO
-		\fontsize{7}{8}\selectfont #1%
+		\fontsize{7.5}{9.4}\selectfont #1%
 	}%
 }
 \newcommand{\cardDoubleText}[2]{%
 	\cardAnyText{%
-		\fontsize{7}{7.3}\selectfont #1%
+		\fontsize{7.5}{7.5}\selectfont #1%
 		\\\includegraphics[width=\textBoxSize]{include/misc/simple-divider.png}\\%
 		#2%
 	}
+}
+\newcommand{\cardNewline}{%
+	\vphantom{X}\\%
+}
+\newcommand{\shortLine}[1]{%
+	\hspace*{\fill}\hspace*{\fill}% for some reason, I need to use two glues here.
+	\mbox{\fontsize{9.3}{8}\selectfont{}#1}%
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -324,21 +330,21 @@
 
 \newcommand{\setCardDeck}[3]{
 	\def\textBoxX{6mm}
-	\def\textBoxY{-57mm}
+	\def\textBoxY{-57.5mm}
 	\def\textBoxSize{51mm}
 	\def\textShape{ {25.5}
-		{0} b{0} \\
-		{0} t{0}{51} \\
-		{16} t{0}{51} \\
-		{16} t{7.5}{43.5} \\
-		{23} t{7.5}{43.5} \\
-		{27} t{13}{38} \\
-		{27} e{51}
+		{0} b{1} \\
+		{0} t{1}{49} \\
+		{15} t{1}{49} \\
+		{15} t{8.5}{41.5} \\
+		{23} t{8.5}{41.5} \\
+		{27} t{14}{36} \\
+		{27} e{49}
 	}
 	\def\topscrollX{31.75mm}
 	\def\topscrollY{-6.5mm}
 	\def\topscrollAlignment{}
-	\def\midscrollX{11mm}
+	\def\midscrollX{7mm}
 	\def\midscrollY{-53.5mm}
 	\def\midscrollAlignment{right}
 	% \placeBaseLayer{decks}
