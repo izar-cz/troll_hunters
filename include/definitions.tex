@@ -162,7 +162,11 @@
 % adds card illustration at coordinates (#1, #2) with height #3 from file name #4
 \newcommand{\placeIllustration}[4]{%
 	\node[inner sep=0pt] at (#1,#2)
-		{\includegraphics[height=#3]{#4}};
+		{%
+		\IfFileExists{#4.svg}%
+			{\includesvg[height=#3]{#4}}%
+			{\includegraphics[height=#3]{#4}}%
+		};
 }
 
 \newcommand{\placeLayout}[1]{%
@@ -284,25 +288,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% NEUTRALS
 %% SHORT
-
-\newcommand{\setCardShortNeutral}[2]{
-	\setCardCharacter
-	\def\hpY{-7mm}
-	\def\textShape{ {23.25}
-		{0} b{0} \\
-		{0} t{1.5}{45} \\
-		{6} t{1.5}{45} \\
-		{6.5} t{0}{46.5} \\
-		{21}  t{0}{46.5} \\
-		{21} t{13.5}{32} \\
-		{22} t{17.5}{29} \\
-		{26} t{17.5}{29} \\
-		{26} e{46.5}
-	}
-	% \placeBaseLayer{characters}
-	\placeIllustration{35.4mm}{-32.8mm}{50mm}{include/pics/neutral/#1}
-	\placeLayout{include/background/neutral_short}
-}
+\let\setCardShortNeutral\setCardLongNeutral
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Undead
