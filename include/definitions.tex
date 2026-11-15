@@ -1,6 +1,8 @@
 %% debugging variables
 \def\backgroundOpacity{1}
-\def\doBacks{1} % 1 or 0
+\newif\ifcardbacks \cardbackstrue % print back sides of the cards
+\newif\ifcarddebug                % print debug information
+\newif\ifcardoutline              % print card outlines
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% card evironment
@@ -53,12 +55,13 @@
 	\draw (\cardwidth+\cardmargin,-\cardheight) -- (\cardwidth,-\cardheight) -- (\cardwidth,-\cardheight-\cardmargin);
 	\draw (-\cardmargin,-\cardheight) -- (0,-\cardheight) -- (0,-\cardheight-\cardmargin);
 
-	%DEBUG:
-	%\draw[red,rounded corners=3.5mm] (0mm,0mm) rectangle (\cardwidth,-\cardheight); % card border
+	\ifcardoutline
+		\draw[red,rounded corners=3.5mm] (0mm,0mm) rectangle (\cardwidth,-\cardheight); % card border
+	\fi
 }
 
 \newcommand{\cardBack}[1]{%
-	\ifnum\doBacks=1%
+	\ifcardbacks%
 		\begin{aCard}
 			\node[inner sep=0pt] at (current page.center)
 				{\includegraphics[width=\cardpaperwidth,height=\cardpaperheight]{include/misc/back.png}};
@@ -82,18 +85,18 @@
 }
 \let\cardType\cardRace
 \newcommand{\cardHP}[1]{%
-	\node at (\hpX,\hpY) {#1};
+	\node at (\hpX,\hpY) {\fontsize{12}{12}\selectfont #1};
 }
 \newcommand{\cardText}[1]{%
 	\cardTextBox{%
-		\fontsize{7.5}{9.4}\selectfont%
+		\fontsize{8.5}{10}\selectfont%
 		\shapepar[1mm]{\textShape}%
 		#1%
 	}%
 }
 \newcommand{\cardDoubleText}[2]{%
 	\cardTextBox{%
-		\fontsize{7.5}{7.5}\selectfont%
+		\cardFontSize%
 		\shapepar[1mm]{\textShape}%
 		#1%
 		\\\hspace*{\fill}\includegraphics[width=45mm]{include/misc/simple-divider.png}\\%
@@ -134,12 +137,11 @@
 	\edef\threshold{\fpeval{#1*\scrollheightfactor}}%
 	\draw [red,inner sep=-0mm] ($(scroll.center) + (-0.5*\threshold mm,-0.5*\scrollheightfactor mm)$) rectangle ($(scroll.center) + (0.5*\threshold mm,0.5*\scrollheightfactor mm)$);
 	\node [inner sep=0mm] at ($(scroll.center) + (0,-5mm)$) {%
-		\includegraphics[height=\scrollheightfactor mm]{include/misc/scroll_#2.png}%
+		\includegraphics[height=\scrollheightfactor mm]{include/scroll/scroll_#2.png}%
 	};
 }
 \newcommand{\scrollThreshold}[2]{%
 	\edef\threshold{\fpeval{#1*\scrollheightfactor}}%
-	% \node at (\scrollheightfactor cm - 2cm, -#2 cm) {\the\currentScrollWidth};
 	\ifdim\currentScrollWidth<\threshold mm\relax \def\bgnum{#2}\fi%
 }%
 %% place "scroll" with text at the specified place on the card.
@@ -158,7 +160,10 @@
 	\node [rotate=\cardOrientation,
 		text height=1ex,text depth=.25ex % fix the baseline, so the text is correctly vertically aligned on the scroll
 	] at (scroll.center) {#1};
-	% \scrollThresholds{\scrollThresholdOutline} % for debugging only
+	\ifcarddebug
+		\scrollThresholds{\scrollThresholdOutline}
+		\node at ($(scroll.center) + (0,-5mm)$) {\settowidth{\currentScrollWidth}{#1}\the\currentScrollWidth};
+	\fi
 }
 
 % adds card illustration at coordinates (#1, #2) with height #3 from file name #4
@@ -202,12 +207,13 @@
 
 \newcommand{\setCardOrc}[2]{
 	\setCardCharacter
+	\def\textBoxX{11.5mm}
 	\def\textShape{ {23.25}
 		{0} b{0} \\
 		{0} t{1.5}{45} \\
-		{6} t{1.5}{45} \\
-		{6.5} t{0}{46.5} \\
-		{10}  t{0}{46.5} \\
+		{3} t{1.5}{45} \\
+		{3.5} t{0.5}{46} \\
+		{10}  t{0.5}{46} \\
 		{15} t{4}{42.5} \\
 		{20} t{3}{43.5} \\
 		{26} t{0}{46.5} \\
@@ -225,15 +231,15 @@
 	\setCardCharacter
 	\def\hpX{55mm}
 	\def\hpY{-8.3mm}
+	\def\textBoxX{11.2mm}
 	\def\textShape{ {23.25}
 		{0} b{0} \\
 		{0} t{1.5}{45} \\
 		{6} t{1.5}{45} \\
 		{6.5} t{0}{46.5} \\
-		{21}  t{0}{46.5} \\
-		{21} t{13.5}{32} \\
-		{22} t{17.5}{29} \\
-		{26} t{17.5}{29} \\
+		{12}  t{0}{46.5} \\
+		{12} t{12}{33.5} \\
+		{26} t{12}{33.5} \\
 		{26} e{46.5}
 	}
 	% \placeBaseLayer{characters}
@@ -250,13 +256,12 @@
 	\def\textBoxX{11mm}
 	\def\textShape{ {23.25}
 		{0} b{0} \\
-		{0} t{1.5}{45} \\
-		{6} t{1.5}{45} \\
-		{6.5} t{0}{46.5} \\
-		{10}  t{0}{46.5} \\
-		{15} t{4}{42.5} \\
-		{20} t{3}{43.5} \\
-		{26} t{0}{46.5} \\
+		{0} t{2}{44.5} \\
+		{3} t{2}{44.5} \\
+		{3.5} t{0.5}{46} \\
+		{10}  t{0.5}{46} \\
+		{10.5} t{4}{42.5} \\
+		{26} t{4}{42.5} \\
 		{26} e{46.5}
 	}
 	% \placeBaseLayer{characters}
@@ -286,6 +291,8 @@
 		{26} t{17.5}{29} \\
 		{26} e{46.5}
 	}
+
+	\def\cardFontSize{\fontsize{8.5}{10}\selectfont}
 	% \placeBaseLayer{characters}
 	\placeIllustration{35.4mm}{-31.3mm}{45.1mm}{include/pics/neutral/#1}
 	\placeLayout{include/background/neutral}
@@ -294,7 +301,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% NEUTRALS
 %% SHORT
-\let\setCardShortNeutral\setCardLongNeutral
+\newcommand{\setCardShortNeutral}[2]{
+	\setCardLongNeutral{#1}{#2}%
+	\def\cardFontSize{\fontsize{7.5}{7.5}\selectfont}
+}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Undead
